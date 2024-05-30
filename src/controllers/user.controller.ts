@@ -1,39 +1,153 @@
-import { Request, Response } from "express";
-import { dbConnection } from "../config/config";
-import UserModels from "../models/user";
+import { Request, Response } from 'express';
+import User, { IUser } from '../models/User';
+import Food from '../models/Food';
+import Exercise from '../models/Exercise';
+import jwt from 'jsonwebtoken';
+import bcrypt from 'bcryptjs';
+import dotenv from 'dotenv';
 
-const registerUser = async (req: Request, res: Response) => {
-    const user = new UserModels.User(req.body);
-    try {
-        await user
-            .save()
-            .then((data) => res.json(data))
-            .catch((error) => res.json({ message: error }));
-    } catch {
-        res.status(500).json({ message: "Error al intentar crear usuario." });
+dotenv.config();
+
+const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret';
+
+export const createUser = async (req: Request, res: Response) => {
+  const { name, email, weight, height, age, password, gender } = req.body;
+
+  try {
+    const user = new User({ name, email, weight, height, age, password, gender });
+    await user.save();
+    const token = jwt.sign({ id: user._id }, JWT_SECRET, { expiresIn: '1d' });
+    res.status(201).json({ token });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+};
+
+export const loginUser = async (req: Request, res: Response) => {
+  const { email, password } = req.body;
+
+  try {
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(400).json({ error: 'Invalid email or password' });
     }
+
+    const isMatch = await user.comparePassword(password);
+    if (!isMatch) {
+      return res.status(400).json({ error: 'Invalid email or password' });
+    }
+
+    const token = jwt.sign({ id: user._id }, JWT_SECRET, { expiresIn: '1d' });
+    res.json({ token });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 };
 
-const login = async (req: Request, res: Response) => {
-    await UserModels.UserLogin.findOne({ email: req.body.email })
-        .where("password")
-        .equals(req.body.password)
-        .then((data) => {
-            if (!data)
-                res.json({
-                    message: "No existe un usuario con esos datos",
-                    data,
-                });
-            res.json({ message: "OK", data });
-            console.log(data);
-        })
-        .catch((error) => res.json({ message: error }));
+export const getUserInfo = async (req: Request, res: Response) => {
+  try {
+    const user = await User.findById(req.user.id).select('-password');
+    res.json(user);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 };
 
-const updateUser = async (req: Request, res: Response) => {
-    const { user, password, height, weight, age, gender } = req.body;
+export const setUserGoal = async (req: Request, res: Response) => {
+  const { goal, exerciseDays } = req.body;
 
-    dbConnection;
+  try {
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    user.goal = goal;
+    user.exerciseDays = exerciseDays;
+
+    // Calculating BMR and macronutrients
+    const bmr = user.gender === 'female'
+      ? 655.1 + (9.563 * user.weight) + (1.850 * user.height) - (4.676 * user.age)
+      : 66.5 + (13.75 * user.weight) + (1.85 * user.height) - (6.775 * user.age);
+
+    const kcal = calculateKcal(bmr, goal, exerciseDays);
+    const macros = calculateMacros(kcal, goal);
+
+    await user.save();
+    res.json({ kcal, macros, foods: await Food.find(), exercises: await getExercises(goal, exerciseDays) });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 };
 
-export default { registerUser, login, updateUser };
+export const addFavorite = async (req: Request, res: Response) => {
+  const { foods, exercises } = req.body;
+
+  try {
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    user.favorite = { foods, exercises };
+    await user.save();
+    res.json(user.favorite);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// Helper functions
+const calculateKcal = (bmr: number, goal: string, exerciseDays: number): number => {
+    // Apply activity factor
+    const activityFactor = exerciseDays === 3 ? 1.375 : exerciseDays === 4 ? 1.55 : 1.725;
+    const baseKcal = bmr * activityFactor;
+  
+    switch (goal) {
+      case 'Disminución de peso':
+        return baseKcal * 0.8; // 20% calorie reduction
+      case 'Hipertrofia':
+      case 'Aumento de fuerza':
+      case 'Aumento de resistencia':
+        return baseKcal * 1.2; // 20% calorie increase
+      case 'Mantenimiento':
+      default:
+        return baseKcal;
+    }
+  };
+  
+  const calculateMacros = (kcal: number, goal: string) => {
+    let carbRatio, fatRatio, proteinRatio;
+  
+    switch (goal) {
+      case 'Disminución de peso':
+        carbRatio = 0.60;
+        fatRatio = 0.25;
+        proteinRatio = 0.15;
+        break;
+      case 'Hipertrofia':
+      case 'Aumento de fuerza':
+      case 'Aumento de resistencia':
+        carbRatio = 0.60;
+        fatRatio = 0.20;
+        proteinRatio = 0.20;
+        break;
+      case 'Mantenimiento':
+      default:
+        carbRatio = 0.55;
+        fatRatio = 0.30;
+        proteinRatio = 0.15;
+        break;
+    }
+  
+    const carbs = (kcal * carbRatio) / 4; // grams of carbs
+    const fats = (kcal * fatRatio) / 9; // grams of fats
+    const proteins = (kcal * proteinRatio) / 4; // grams of proteins
+  
+    return { carbs, fats, proteins };
+  };
+  
+  const getExercises = async (goal: string, exerciseDays: number) => {
+    return await Exercise.find({ objective: goal, days: exerciseDays });
+  };
+  

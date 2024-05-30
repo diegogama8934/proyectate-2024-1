@@ -1,14 +1,13 @@
-import { Request, Response } from "express";
-import controller from "../controllers/user.controller";
-import User from "../models/user";
+import { Router } from 'express';
+import { createUser, loginUser, getUserInfo, setUserGoal, addFavorite } from '../controllers/userController';
+import authMiddleware from '../middleware/authMiddleware';
 
-const { Router } = require("express");
 const router = Router();
 
-// Crear usuario
-router.post("/signUp", controller.registerUser);
-
-// Iniciar sesión
-router.post("/login", controller.login);
+router.post('/register', createUser);
+router.post('/login', loginUser);
+router.get('/me', authMiddleware, getUserInfo);
+router.post('/goal', authMiddleware, setUserGoal);
+router.post('/favorites', authMiddleware, addFavorite);
 
 export default router;

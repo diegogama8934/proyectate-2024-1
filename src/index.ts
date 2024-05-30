@@ -1,7 +1,7 @@
 import express from 'express';
-import mongoose from 'mongoose';
+import mongoose, { ConnectOptions } from 'mongoose';
 import dotenv from 'dotenv';
-import userRoutes from './routes/user';
+import userRoutes from './routes/user.route';
 
 dotenv.config();
 
@@ -14,14 +14,17 @@ app.use(express.json());
 app.use('/api/users', userRoutes);
 
 // Connect to MongoDB Atlas
-mongoose.connect(process.env.MONGO_URI!, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-}).then(() => {
-  console.log('Connected to MongoDB');
-  app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
+const mongoOptions: ConnectOptions = {
+  // Agregar otras opciones válidas si es necesario
+};
+
+mongoose.connect(process.env.MONGO_URI!, mongoOptions)
+  .then(() => {
+    console.log('Connected to MongoDB');
+    app.listen(PORT, () => {
+      console.log(`Server running on port ${PORT}`);
+    });
+  })
+  .catch((error) => {
+    console.error('Connection error', error.message);
   });
-}).catch((error) => {
-  console.error('Connection error', error.message);
-});

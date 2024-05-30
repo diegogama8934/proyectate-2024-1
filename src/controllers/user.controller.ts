@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
-import User, { IUser } from '../models/User';
-import Food from '../models/Food';
-import Exercise from '../models/Exercise';
+import User, { IUser } from '../models/user';
+import Food from '../models/food';
+import Exercise from '../models/exercise';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import dotenv from 'dotenv';

@@ -19,6 +19,10 @@ const mongoOptions: ConnectOptions = {
     // Agregar otras opciones válidas si es necesario
 };
 
+app.get("/", (req, res) => {
+    res.send("API Proyectate 2024");
+});
+
 mongoose
     .connect(process.env.DATABASE_URL, mongoOptions)
     .then(() => {

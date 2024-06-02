@@ -2,41 +2,28 @@ import { Request, Response } from "express";
 import User, { IUser } from "../models/user";
 import Food from "../models/food";
 import Exercise from "../models/exercise";
-import jwt from "jsonwebtoken";
-import bcrypt from "bcryptjs";
 import dotenv from "dotenv";
 
-dotenv.config();
+export interface CustomReq extends Request {
+    user: IUser;
+}
 
-const JWT_SECRET = process.env.JWT_SECRET || "your_jwt_secret";
+dotenv.config();
 
 export const createUser = async (req: Request, res: Response) => {
     const { name, email, weight, height, age, password, gender } = req.body;
 
     try {
-        const user = new User({
-            name,
-            email,
-            weight,
-            height,
-            age,
-            password,
-            gender,
-        });
+        const user = new User({ name, email, weight, height, age, password, gender,});
         await user.save();
-        const token = jwt.sign({ id: user._id }, JWT_SECRET);
-        res.status(201).json({ token });
+        res.status(201).json({ id: user._id });
     } catch (error) {
         res.status(400).json({ error: error.message });
     }
 };
-export interface CustomReq extends Request {
-    user: IUser;
-}
+
 export const loginUser = async (req: Request, res: Response) => {
     const { email, password } = req.body;
-    console.log(JWT_SECRET);
-    
 
     try {
         const user = await User.findOne({ email });
@@ -49,8 +36,7 @@ export const loginUser = async (req: Request, res: Response) => {
             return res.status(400).json({ error: "Invalid email or password" });
         }
 
-        const token = jwt.sign({ id: user._id }, JWT_SECRET);
-        res.json({ token });
+        res.status(200).json({ id: user._id });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
@@ -66,8 +52,9 @@ export const getUserInfo = async (req: CustomReq, res: Response) => {
 };
 
 export const setUserGoal = async (req: CustomReq, res: Response) => {
-    const { goal, exerciseDays } = req.body;
-
+    const { goal, exerciseDays, level } = req.body;
+    console.log(goal, exerciseDays, level);
+    
     try {
         // Ver si el usuario existe
         const user = await User.findById(req.user.id);
@@ -99,7 +86,7 @@ export const setUserGoal = async (req: CustomReq, res: Response) => {
             kcal,
             macros,
             foods: await Food.find(),
-            exercises: await getExercises(goal, exerciseDays),
+            exercises: await getExercises(goal, exerciseDays, level),
         });
     } catch (error) {
         res.status(500).json({ error: error.message });
@@ -179,6 +166,6 @@ const calculateMacros = (kcal: number, goal: string) => {
     return { carbs, fats, proteins };
 };
 
-const getExercises = async (goal: string, exerciseDays: number) => {
-    return await Exercise.find({ objective: goal, days: exerciseDays });
+const getExercises = async (goal: string, exerciseDays: number, level: string) => {
+    return await Exercise.find({ Objetivo: goal, Dias: exerciseDays, Nivel: level });
 };

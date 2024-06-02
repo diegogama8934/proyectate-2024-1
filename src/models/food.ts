@@ -16,4 +16,4 @@ const FoodSchema: Schema = new Schema({
   fats: { type: Number, required: true }
 });
 
-export default mongoose.model<IFood>('Food', FoodSchema);
+export default mongoose.model<IFood>("Food", FoodSchema, "Comida");

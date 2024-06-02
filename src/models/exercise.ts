@@ -1,17 +1,17 @@
 import mongoose, { Document, Schema } from 'mongoose';
 
 export interface IExercise extends Document {
-  name: string;
-  objective: string;
-  days: number;
-  level: string;
+  Nombre: string;
+  Objetivo: string;
+  Dias: number;
+  Nivel: string;
 }
 
 const ExerciseSchema: Schema = new Schema({
-  name: { type: String, required: true },
-  objective: { type: String, required: true },
-  days: { type: Number, required: true },
-  level: { type: String, required: true }
+  Nombre: { type: String, required: true },
+  Objetivo: { type: String, required: true },
+  Dias: { type: Number, required: true },
+  Nivel: { type: String, required: true }
 });
 
-export default mongoose.model<IExercise>('Exercise', ExerciseSchema);
+export default mongoose.model<IExercise>("Exercise", ExerciseSchema, "Rutinas");

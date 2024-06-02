@@ -5,7 +5,7 @@ import { CustomReq } from "../controllers/user.controller";
 
 const authMiddleware = async ( req: CustomReq, res: Response, next: NextFunction) => {
     const userId = req.header("Authorization");
-    console.log(userId);
+    // console.log(userId);
 
     if (!userId) {
         return res.status(401).json({ error: "Access denied. No user ID provided." });

@@ -53,7 +53,7 @@ export const getUserInfo = async (req: CustomReq, res: Response) => {
 
 export const setUserGoal = async (req: CustomReq, res: Response) => {
     const { goal, exerciseDays, level } = req.body;
-    console.log(goal, exerciseDays, level);
+    // console.log(goal, exerciseDays, level);
     
     try {
         // Ver si el usuario existe
@@ -94,7 +94,7 @@ export const setUserGoal = async (req: CustomReq, res: Response) => {
 };
 
 export const addFavorite = async (req: CustomReq, res: Response) => {
-    console.log(req);
+    // console.log(req);
     const { foods, exercises } = req.body;
 
     try {

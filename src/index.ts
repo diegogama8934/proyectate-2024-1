@@ -6,7 +6,7 @@ import userRoutes from "./routes/user.route";
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 3120;
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
@@ -15,22 +15,20 @@ app.use(express.urlencoded({ extended: false }));
 app.use("/api/users", userRoutes);
 
 // Connect to MongoDB Atlas
-const mongoOptions: ConnectOptions = {
-    // Agregar otras opciones válidas si es necesario
-};
+const mongoOptions: ConnectOptions = {};
 
 app.get("/", (req, res) => {
-    res.send("API Proyectate 2024");
+  res.send("API Proyectate 2024");
 });
 
 mongoose
-    .connect(process.env.DATABASE_URL, mongoOptions)
-    .then(() => {
-        console.log("Connected to MongoDB");
-        app.listen(PORT, () => {
-            console.log(`Server running on port ${PORT}`);
-        });
-    })
-    .catch((error) => {
-        console.error("Connection error", error.message);
+  .connect(process.env.DATABASE_URL, mongoOptions)
+  .then(() => {
+    console.log("Connected to MongoDB");
+    app.listen(PORT, () => {
+      console.log(`Server running on port ${PORT}`);
     });
+  })
+  .catch((error) => {
+    console.error("Connection error", error.message);
+  });

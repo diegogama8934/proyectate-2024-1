@@ -24,9 +24,7 @@ export const createUser = async (req: Request, res: Response) => {
             gender,
         });
         await user.save();
-        const token = jwt.sign({ id: user._id }, JWT_SECRET, {
-            expiresIn: "1d",
-        });
+        const token = jwt.sign({ id: user._id }, JWT_SECRET);
         res.status(201).json({ token });
     } catch (error) {
         res.status(400).json({ error: error.message });
@@ -37,6 +35,8 @@ export interface CustomReq extends Request {
 }
 export const loginUser = async (req: Request, res: Response) => {
     const { email, password } = req.body;
+    console.log(JWT_SECRET);
+    
 
     try {
         const user = await User.findOne({ email });
@@ -49,9 +49,7 @@ export const loginUser = async (req: Request, res: Response) => {
             return res.status(400).json({ error: "Invalid email or password" });
         }
 
-        const token = jwt.sign({ id: user._id }, JWT_SECRET, {
-            expiresIn: "1d",
-        });
+        const token = jwt.sign({ id: user._id }, JWT_SECRET);
         res.json({ token });
     } catch (error) {
         res.status(500).json({ error: error.message });
@@ -71,11 +69,13 @@ export const setUserGoal = async (req: CustomReq, res: Response) => {
     const { goal, exerciseDays } = req.body;
 
     try {
+        // Ver si el usuario existe
         const user = await User.findById(req.user.id);
         if (!user) {
             return res.status(404).json({ error: "User not found" });
         }
 
+        // Fijar meta y días de ejercicio del usuario
         user.goal = goal;
         user.exerciseDays = exerciseDays;
 

@@ -13,19 +13,25 @@ const authMiddleware = async (
     next: NextFunction
 ) => {
     const token = req.header("Authorization")?.replace("Bearer ", "");
+    console.log(JWT_SECRET);
+    console.log(token);
 
     if (!token) {
+        console.log("!token");
         return res
             .status(401)
             .json({ error: "Access denied. No token provided." });
     }
 
     try {
+        console.log("Intento del decoded");
         const decoded: any = jwt.verify(token, JWT_SECRET);
+        console.log(decoded);
         req.user = await User.findById(decoded.id);
         next();
     } catch (ex) {
-        res.status(400).json({ error: "Invalid token." });
+        console.log(ex);
+        res.status(400).json({ error: `${ex}` });
     }
 };
 

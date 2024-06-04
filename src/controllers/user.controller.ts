@@ -15,7 +15,7 @@ export const createUser = async (req: Request, res: Response) => {
 
     try {
         const user = new User({ name, email, weight, height, age, password, gender,});
-        await user.save();
+        await user.save();   
         res.status(201).json({ id: user._id });
     } catch (error) {
         res.status(400).json({ error: error.message });
@@ -169,3 +169,18 @@ const calculateMacros = (kcal: number, goal: string) => {
 const getExercises = async (goal: string, exerciseDays: number, level: string) => {
     return await Exercise.find({ Objetivo: goal, Dias: exerciseDays, Nivel: level });
 };
+
+export const getUserFavorites = async (req: CustomReq, res: Response) => {
+    const { userId } = req.params;
+  
+    try {
+      const user = await User.findById(req.user.id).select('favorite');
+      if (!user) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+  
+      res.json(user.favorite);
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  };
